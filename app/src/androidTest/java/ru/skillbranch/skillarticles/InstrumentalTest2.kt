@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
+class InstrumentalTest2 {
     @get:Rule
     val testRule = InstantTaskExecutorRule()
 
