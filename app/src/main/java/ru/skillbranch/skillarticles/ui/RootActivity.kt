@@ -26,6 +26,7 @@ class RootActivity : AppCompatActivity() {
     private lateinit var viewModel: ArticleViewModel
     private lateinit var searchView: SearchView
     var _isSearch = false
+    var _queryString: String? = "s"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +39,7 @@ class RootActivity : AppCompatActivity() {
         viewModel = ViewModelProviders.of(this, vmFactory).get(ArticleViewModel::class.java)
         viewModel.observeState(this) {
             renderUi(it)
-            setupToolbar()
+            //setupToolbar()
         }
 
         viewModel.observeNotifications(this) {
@@ -54,23 +55,26 @@ class RootActivity : AppCompatActivity() {
         searchView.queryHint = "Search View Hint"
 
         if (_isSearch) {
-            searchView.setQuery("test", true);
-            searchView.setFocusable(true);
-            searchView.setIconified(false);
-            searchView.requestFocusFromTouch();
+            Log.d("RootActivity", "Set open search")
+            searchItem.expandActionView()
+            searchView.setQuery(_queryString, true)
+            searchView.setFocusable(true)
+            searchView.setIconified(false)
+            searchView.requestFocusFromTouch()
         }
 
-        //Log.d(get(), "Test " + get())
         searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean {
                 Log.d("RootActivity", "Open")
-                //viewModel.handleIsSearch(true)
+                _isSearch = true
+                changeStateSearch(_isSearch)
                 return true
             }
 
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
                 Log.d("RootActivity", "Close")
-                //viewModel.handleIsSearch(false)
+                _isSearch = false
+                changeStateSearch(_isSearch)
                 invalidateOptionsMenu()
                 return true
             }
@@ -78,31 +82,40 @@ class RootActivity : AppCompatActivity() {
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                viewModel.handleIsSearch(true)
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                return false
+                _queryString = newText
+                saveQuery(_queryString)
+                return true
             }
-
         })
 
         return super.onCreateOptionsMenu(menu)
     }
 
+    private fun saveQuery(newText: String?) {
+        viewModel.handleSearchQuery(newText)
+    }
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        val logo = if (toolbar.childCount > 2) toolbar.getChildAt(2) as ImageView else null
-        logo?.scaleType = ImageView.ScaleType.CENTER_CROP
-        //check toolbar imports
-        (logo?.layoutParams as? Toolbar.LayoutParams)?.let {
-            it.width = dpToIntPx(40)
-            it.height = dpToIntPx(40)
-            it.marginEnd = dpToIntPx(16)
-            logo.layoutParams = it
+
+        when (toolbar.getChildAt(2)) {
+            is ImageView -> {
+                val logo =
+                    if (toolbar.childCount > 2 && !_isSearch) toolbar.getChildAt(2) as ImageView else null
+                logo?.scaleType = ImageView.ScaleType.CENTER_CROP
+                //check toolbar imports
+                (logo?.layoutParams as? Toolbar.LayoutParams)?.let {
+                    it.width = dpToIntPx(40)
+                    it.height = dpToIntPx(40)
+                    it.marginEnd = dpToIntPx(16)
+                    logo.layoutParams = it
+                }
+            }
         }
     }
 
@@ -111,9 +124,8 @@ class RootActivity : AppCompatActivity() {
         btn_settings.isChecked = data.isShowMenu
         if (data.isShowMenu) submenu.open() else submenu.close()
 
-
+        _queryString = data.searchQuery ?: ""
         _isSearch = data.isSearch
-        Log.d(get(), "IsSearch: " + _isSearch)
 
         //bind article person data
         btn_like.isChecked = data.isLike
@@ -142,14 +154,10 @@ class RootActivity : AppCompatActivity() {
         toolbar.title = data.title ?: "Skill Articles"
         toolbar.subtitle = data.category ?: "loading..."
         if (data.categoryIcon != null) toolbar.logo = getDrawable(data.categoryIcon as Int)
-
-
     }
 
     private fun renderNotification(notify: Notify) {
         val snackbar = Snackbar.make(coordinator_container, notify.message, Snackbar.LENGTH_LONG)
-
-
 
         when (notify) {
             is Notify.TextMessage -> { /* nothing */
@@ -183,6 +191,10 @@ class RootActivity : AppCompatActivity() {
         btn_bookmark.setOnClickListener { viewModel.handleBookmark() }
         btn_share.setOnClickListener { viewModel.handleShare() }
         btn_settings.setOnClickListener { viewModel.handleToggleMenu() }
+    }
+
+    private fun changeStateSearch(b: Boolean) {
+        viewModel.handleIsSearch(b)
     }
 
     private fun setupSubmenu() {
