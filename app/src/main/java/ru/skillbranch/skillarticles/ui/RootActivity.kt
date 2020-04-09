@@ -111,8 +111,8 @@ class RootActivity : BaseActivity<ArticleViewModel>(), IArticleView {
     }
 
     override fun hideSearchBar() {
-        bottombar.setSearchState(true)
-        scroll.setMarginOptionally(bottom = dpToIntPx(56))
+        bottombar.setSearchState(false)
+        scroll.setMarginOptionally(bottom = dpToIntPx(0))
     }
 
 //    Правильно я понимаю, что val newLayoutParams = ViewGroup.MarginLayoutParams((this as ViewGroup).layoutParams)
