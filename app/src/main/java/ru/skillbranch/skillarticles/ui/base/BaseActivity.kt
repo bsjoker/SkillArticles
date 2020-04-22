@@ -2,11 +2,18 @@ package ru.skillbranch.skillarticles.ui.base
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import ru.skillbranch.skillarticles.viewmodels.ArticleViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.Notify
+import ru.skillbranch.skillarticles.viewmodels.base.ViewModelDelegate
 
 abstract class BaseActivity<T : BaseViewModel<out IViewModelState>> : AppCompatActivity() {
+//    internal inline fun provideViewModel(arg : Any?) : ViewModelDelegate<ArticleViewModel> {
+//
+//    }
+
+
     protected abstract val binding:Binding
     protected abstract val viewModel : T
     protected abstract val layout:Int

@@ -49,6 +49,8 @@ class RootActivity : BaseActivity<ArticleViewModel>(), IArticleView {
         ViewModelProviders.of(this, vmFactory).get(ArticleViewModel::class.java)
     }
 
+    //override val viewModel: ArticleViewModel by provideViewModel("0")
+
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     public override val binding: ArticleBinding by lazy { ArticleBinding() }
 
