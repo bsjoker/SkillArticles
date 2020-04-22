@@ -4,7 +4,7 @@ import ru.skillbranch.skillarticles.data.local.PrefManager
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-class PrefsDelegate<T>(private val defaultValue: T) {
+class PrefDelegate<T>(private val defaultValue: T) {
     private var storedValue : T? = null
     operator fun provideDelegate(
         thisRef: PrefManager,
