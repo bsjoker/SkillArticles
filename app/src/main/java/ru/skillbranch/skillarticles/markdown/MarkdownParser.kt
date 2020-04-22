@@ -1,6 +1,5 @@
 package ru.skillbranch.skillarticles.markdown
 
-import android.util.Log
 import java.util.regex.Pattern
 
 object MarkdownParser {
