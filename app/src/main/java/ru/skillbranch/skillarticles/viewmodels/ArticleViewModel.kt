@@ -11,12 +11,15 @@ import ru.skillbranch.skillarticles.extensions.data.toAppSettings
 import ru.skillbranch.skillarticles.extensions.data.toArticlePersonalInfo
 import ru.skillbranch.skillarticles.extensions.format
 import ru.skillbranch.skillarticles.extensions.indexesOf
+import ru.skillbranch.skillarticles.markdown.MarkdownParser
 import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.Notify
 
-class ArticleViewModel(private val articleId: String): BaseViewModel<ArticleState>( ArticleState()), IArticleViewModel {
+class ArticleViewModel(private val articleId: String):
+    BaseViewModel<ArticleState>( ArticleState()), IArticleViewModel {
     private val repository = ArticleRepository
+    private var clearContent: String? = null
     private var menuIsShown: Boolean = false
 
     init {
@@ -59,7 +62,7 @@ class ArticleViewModel(private val articleId: String): BaseViewModel<ArticleStat
     }
 
     //Load text from network
-    override fun getArticleContent(): LiveData<List<Any>?> {
+    override fun getArticleContent(): LiveData<String?> {
         return repository.loadArticleContent(articleId)
     }
 
@@ -86,7 +89,8 @@ class ArticleViewModel(private val articleId: String): BaseViewModel<ArticleStat
 
     override fun handleSearch(query: String?) {
         query ?: return
-        val result = (currentState.content.firstOrNull() as? String)
+        if (clearContent == null) clearContent = MarkdownParser.clear(currentState.content)
+        val result = clearContent
             ?.indexesOf(query)
             ?.map {it to it + query.length}
         updateState { it.copy(searchQuery = query, searchResults = result!!, searchPosition = 0) }
@@ -188,7 +192,7 @@ data class ArticleState(
     val date: String? = null, //дата публикации
     val author: Any? = null,
     val poster: String? = null, //обложка статьи
-    val content: List<Any> = emptyList(), //контент
+    val content: String? = null, //контент
     val reviews: List<Any> = emptyList() //отзывы
 ) : IViewModelState {
     override fun save(outState: Bundle) {

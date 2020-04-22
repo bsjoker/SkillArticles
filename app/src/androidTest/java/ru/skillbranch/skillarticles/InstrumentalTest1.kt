@@ -1,36 +1,19 @@
 package ru.skillbranch.skillarticles
 
-import android.text.Spannable
-import android.view.View
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.text.getSpans
-import androidx.core.view.marginBottom
-import androidx.core.widget.NestedScrollView
-import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso
-import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.matcher.BoundedMatcher
-import androidx.test.espresso.matcher.ViewMatchers.*
+import android.graphics.*
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.VectorDrawable
+import android.text.Layout
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.hamcrest.CoreMatchers.*
-import org.hamcrest.Description
-import org.hamcrest.Matcher
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.FixMethodOrder
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.MethodSorters
-import ru.skillbranch.skillarticles.data.LocalDataHolder
-import ru.skillbranch.skillarticles.data.NetworkDataHolder
-import ru.skillbranch.skillarticles.extensions.indexesOf
-import ru.skillbranch.skillarticles.extensions.setMarginOptionally
-import ru.skillbranch.skillarticles.ui.RootActivity
-import ru.skillbranch.skillarticles.ui.custom.SearchFocusSpan
-import ru.skillbranch.skillarticles.ui.custom.SearchSpan
-import ru.skillbranch.skillarticles.viewmodels.ArticleState
-import java.lang.Thread.sleep
+import org.mockito.ArgumentMatchers
+import org.mockito.Mockito.*
+import ru.skillbranch.skillarticles.markdown.spans.*
 
 
 /**
@@ -38,310 +21,389 @@ import java.lang.Thread.sleep
  *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
-    companion object {
-        @BeforeClass
-        @JvmStatic
-        fun setup() {
-            LocalDataHolder.disableDelay(true)
-            NetworkDataHolder.disableDelay(true)
-        }
-    }
+class InstrumentedTest1 {
 
     @Test
-    fun module1() {
-        val content =
-            """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas nibh sapien, consectetur et ultrices quis, convallis sit amet augue. Interdum et malesuada fames ac ante ipsum primis in faucibus. Vestibulum et convallis augue, eu hendrerit diam. Curabitur ut dolor at justo suscipit commodo. Curabitur consectetur, massa sed sodales sollicitudin, orci augue maximus lacus, ut elementum risus lorem nec tellus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent accumsan tempor lorem, quis pulvinar justo. Vivamus euismod risus ac arcu pharetra fringilla.
-                Maecenas cursus vehicula erat, in eleifend diam blandit vitae. In hac habitasse platea dictumst. Duis egestas augue lectus, et vulputate diam iaculis id. Aenean vestibulum nibh vitae mi luctus tincidunt. Fusce iaculis molestie eros, ac efficitur odio cursus ac. In at orci eget eros dapibus pretium congue sed odio. Maecenas facilisis, dolor eget mollis gravida, nisi justo mattis odio, ac congue arcu risus sed turpis.
-                Sed tempor a nibh at maximus."""
+    fun draw_list_item() {
+        //settings
+        val color = Color.RED
+        val gap = 24f
+        val radius = 8f
 
-        var actualIndexes = content.indexesOf("sed")
-        Assert.assertEquals(listOf(322, 930, 1032, 1060), actualIndexes)
+        //defaults
+        val defaultColor = Color.GRAY
+        val cml = 0 //current margin location
+        val ltop = 0 //line top
+        val lbase = 60 //line baseline
+        val lbottom = 80 //line bottom
 
-        actualIndexes = content.indexesOf("sed", false)
-        Assert.assertEquals(listOf(322, 930, 1032), actualIndexes)
+        //mocks
+        val canvas = mock(Canvas::class.java)
+        val paint = mock(Paint::class.java)
+        `when`(paint.color).thenReturn(defaultColor)
+        val layout = mock(Layout::class.java)
 
-        actualIndexes = content.indexesOf("")
-        Assert.assertEquals(listOf<Int>(), actualIndexes)
+        val text = SpannableString("text")
 
-        actualIndexes = null.indexesOf("")
-        Assert.assertEquals(listOf<Int>(), actualIndexes)
-    }
+        val span = UnorderedListSpan(gap, radius, color)
+        text.setSpan(span, 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-    @Test
-    fun module2() {
-        val scenario = ActivityScenario.launch(RootActivity::class.java)
-        var actualBefore = 0
-        var actualAfter = 0
-        scenario.onActivity { activity ->
-            val scroll = activity.findViewById<NestedScrollView>(R.id.scroll)
-            actualBefore = scroll.marginBottom
-            scroll.setMarginOptionally(bottom = 112)
-            actualAfter = scroll.marginBottom
-        }
-        Assert.assertEquals(0, actualBefore)
-        Assert.assertEquals(112, actualAfter)
-        scenario.close()
-    }
+        //check leading margin
+        assertEquals((4 * radius + gap).toInt(), span.getLeadingMargin(true))
 
-    @Test
-    fun module3() {
-        val scenario = ActivityScenario.launch(RootActivity::class.java)
-        var actualBeforeBg = 0
-        var actualBeforeFg = 0
-
-        var actualAfterBg = 0
-        var actualAfterFg = 0
-        scenario.onActivity { activity ->
-            actualBeforeBg = activity.bgColor
-            actualBeforeFg = activity.fgColor
-            activity.delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_YES
-        }
-        scenario.onActivity { activity ->
-            actualAfterBg = activity.bgColor
-            actualAfterFg = activity.fgColor
-        }
-        Assert.assertEquals("#FC4C4C", actualBeforeBg.toHex())
-        Assert.assertEquals("#FFFFFF", actualBeforeFg.toHex())
-        Assert.assertEquals("#BB86FC", actualAfterBg.toHex())
-        Assert.assertEquals("#FFFFFF", actualAfterFg.toHex())
-        scenario.close()
-    }
-
-    @Test
-    fun module4() {
-        val scenario = ActivityScenario.launch(RootActivity::class.java)
-        var expectedData = ArticleState(
-            isShowMenu = true,
-            isBigText = true,
-            isLoadingContent = false,
-            content = listOf("test content"),
-            isLike = true,
-            isBookmark = true,
-            title = "test title",
-            category = "test category"
+        //check bullet draw
+        span.drawLeadingMargin(
+            canvas, paint, cml, 1,
+            ltop, lbase, lbottom, text, 0, text.length,
+            true, layout
         )
 
-        scenario.onActivity { activity ->
-            activity.binding.bind(expectedData)
-        }
+        //check order call
+        val inOrder = inOrder(paint, canvas)
+        //check first set color to paint
+        inOrder.verify(paint).color = color
+        //check draw circle bullet
+        inOrder.verify(canvas).drawCircle(
+            gap + cml + radius,
+            (lbottom - ltop) / 2f + ltop,
+            radius,
+            paint
+        )
+        //check paint color restore
+        inOrder.verify(paint).color = defaultColor
+    }
 
-        Espresso.onView(withId(R.id.submenu))
-            .check(ViewAssertions.matches(isDisplayed()))
-        Espresso.onView(withId(R.id.btn_like))
-            .check(ViewAssertions.matches(isChecked()))
-        Espresso.onView(withId(R.id.btn_bookmark))
-            .check(ViewAssertions.matches(isChecked()))
-        Espresso.onView(withId(R.id.btn_text_up))
-            .check(ViewAssertions.matches(isChecked()))
-        Espresso.onView(withId(R.id.switch_mode))
-            .check(ViewAssertions.matches(not(isChecked())))
-        Espresso.onView(withId(R.id.tv_text_content))
-            .check(ViewAssertions.matches(withFontSize(18f)))
-        Espresso.onView(withId(R.id.tv_text_content))
-            .check(ViewAssertions.matches(withText("test content")))
-        Espresso.onView(
-            allOf(
-                instanceOf(TextView::class.java),
-                withParent(withId(R.id.toolbar)),
-                withParentIndex(0)
+    @Test
+    fun draw_quote() {
+        //settings
+        val color = Color.RED
+        val gap = 24f
+        val lineWidth = 8f
+
+        //defaults
+        val defaultColor = Color.GRAY
+        val cml = 0 //current margin location
+        val ltop = 0 //line top
+        val lbase = 60 //line baseline
+        val lbottom = 80 //line bottom
+
+        //mocks
+        val canvas = mock(Canvas::class.java)
+        val paint = mock(Paint::class.java)
+        `when`(paint.color).thenReturn(defaultColor)
+        val layout = mock(Layout::class.java)
+
+        val text = SpannableString("text")
+
+        val span = BlockquotesSpan(gap, lineWidth, color)
+        text.setSpan(span, 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        //check leading margin
+        assertEquals((lineWidth + gap).toInt(), span.getLeadingMargin(true))
+
+        //check line draw
+        span.drawLeadingMargin(
+            canvas, paint, cml, 1,
+            ltop, lbase, lbottom, text, 0, text.length,
+            true, layout
+        )
+
+        //check order call
+        val inOrder = inOrder(paint, canvas)
+        //check first set color to paint
+        inOrder.verify(paint).color = color
+        inOrder.verify(paint).strokeWidth = lineWidth
+        //check draw circle bullet
+        inOrder.verify(canvas).drawLine(
+            lineWidth / 2f,
+            ltop.toFloat(),
+            lineWidth / 2,
+            lbottom.toFloat(),
+            paint
+        )
+        //check paint color restore
+        inOrder.verify(paint).color = defaultColor
+    }
+
+    @Test
+    fun draw_header() {
+        //settings
+        val levels = 1..6
+        val textColor = Color.RED
+        val lineColor = Color.GREEN
+        val marginTop = 24f
+        val marginBottom = 16f
+
+        //defaults
+        val canvasWidth = 700
+        val defaultColor = Color.GRAY
+        val cml = 0 //current margin location
+        val ltop = 0 //line top
+        val lbase = 60 //line baseline
+        val lbottom = 80 //line bottom
+        val defaultAscent = -30
+        val defaultDescent = 10
+
+        for (level in levels){
+            //mocks
+            val canvas = mock(Canvas::class.java)
+            `when`(canvas.width).thenReturn(canvasWidth)
+            val paint = mock(Paint::class.java)
+            `when`(paint.color).thenReturn(defaultColor)
+            val measurePaint = mock(TextPaint::class.java)
+            val drawPaint = mock(TextPaint::class.java)
+            val layout = mock(Layout::class.java)
+            val fm = mock(Paint.FontMetricsInt::class.java)
+            fm.ascent = defaultAscent
+            fm.descent = defaultDescent
+
+            val text = SpannableString("text")
+
+            val span = HeaderSpan(level, textColor, lineColor, marginTop, marginBottom)
+            text.setSpan(span, 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+            //check leading margin
+            assertEquals(0, span.getLeadingMargin(true))
+
+            //check measure state
+            span.updateMeasureState(measurePaint)
+            verify(measurePaint).textSize *= span.sizes[level]!!
+            verify(measurePaint).isFakeBoldText = true
+
+            //check draw state
+            span.updateDrawState(drawPaint)
+            verify(drawPaint).textSize *= span.sizes[level]!!
+            verify(drawPaint).isFakeBoldText = true
+            verify(drawPaint).color = textColor
+
+            //check change line height
+            span.chooseHeight(text,0, text.length.inc(), 0,0, fm)
+            assertEquals((defaultAscent - marginTop).toInt(), fm.ascent)
+            assertEquals(((defaultDescent - defaultAscent) * span.linePadding + marginBottom).toInt(), fm.descent)
+            assertEquals(fm.top, fm.ascent)
+            assertEquals(fm.bottom, fm.descent)
+
+            //check line draw
+            span.drawLeadingMargin(
+                canvas, paint, cml, 1,
+                ltop, lbase, lbottom, text, 0, text.length,
+                true, layout
             )
+
+            val inOrder = inOrder(paint, canvas)
+
+            if(level == 1 || level ==2){
+                inOrder.verify(paint).color = lineColor
+                val lh = (paint.descent() - paint.ascent()) * span.sizes[level]!!
+                val lineOffset = lbase + lh * span.linePadding
+                inOrder.verify(canvas).drawLine(0f, lineOffset, canvasWidth.toFloat(), lineOffset, paint)
+
+                inOrder.verify(paint).color = defaultColor
+            }
+        }
+    }
+
+
+    @Test
+    fun draw_rule() {
+        //settings
+        val color = Color.RED
+        val width = 24f
+
+        //defaults
+        val canvasWidth = 700
+        val defaultColor = Color.GRAY
+        val cml = 0 //current margin location
+        val ltop = 0 //line top
+        val lbase = 60 //line baseline
+        val lbottom = 80 //line bottom
+
+        //mocks
+        val canvas = mock(Canvas::class.java)
+        `when`(canvas.width).thenReturn(canvasWidth)
+        val paint = mock(Paint::class.java)
+        `when`(paint.color).thenReturn(defaultColor)
+
+        val text = SpannableString("text")
+
+        val span = HorizontalRuleSpan(width, color)
+        text.setSpan(span, 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        //check draw rule line
+        span.draw(canvas, text, 0, text.length, cml.toFloat(), ltop, lbase, lbottom, paint)
+
+        val inOrder = inOrder(paint, canvas)
+
+        inOrder.verify(paint).color = color
+
+        inOrder.verify(canvas).drawLine(
+            0f,
+            (ltop + lbottom) / 2f,
+            canvasWidth.toFloat(),
+            (ltop + lbottom) / 2f,
+            paint
         )
-            .check(ViewAssertions.matches(withText("test title")))
-        Espresso.onView(
-            allOf(
-                instanceOf(TextView::class.java),
-                withParent(withId(R.id.toolbar)),
-                withParentIndex(1)
+
+        inOrder.verify(paint).color = defaultColor
+
+
+    }
+
+
+    @Test
+    fun draw_inline_code() {
+        //settings
+        val textColor: Int = Color.RED
+        val bgColor: Int = Color.GREEN
+        val cornerRadius: Float = 8f
+        val padding: Float = 8f
+
+        //defaults
+        val canvasWidth = 700
+        val defaultColor = Color.GRAY
+        val measureText = 100f
+        val cml = 0 //current margin location
+        val ltop = 0 //line top
+        val lbase = 60 //line baseline
+        val lbottom = 80 //line bottom
+
+        //mocks
+        val canvas = mock(Canvas::class.java)
+        `when`(canvas.width).thenReturn(canvasWidth)
+        val paint = mock(Paint::class.java)
+        `when`(paint.color).thenReturn(defaultColor)
+        `when`(
+            paint.measureText(
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyInt(),
+                ArgumentMatchers.anyInt()
             )
+        ).thenReturn(measureText)
+        val fm = mock(Paint.FontMetricsInt::class.java)
+
+        val text = SpannableString("text")
+
+        val span = InlineCodeSpan(textColor, bgColor, cornerRadius, padding)
+        text.setSpan(span, 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        //check measure size
+        val size = span.getSize(paint, text, 0, text.length, fm)
+        assertEquals((2 * padding + measureText).toInt(), size)
+
+
+        //check draw inline code
+        span.draw(canvas, text, 0, text.length, cml.toFloat(), ltop, lbase, lbottom, paint)
+
+        val inOrder = inOrder(paint, canvas)
+
+        //check draw background
+        inOrder.verify(paint).color = bgColor
+        inOrder.verify(canvas).drawRoundRect(
+            RectF(0f, ltop.toFloat(), measureText + 2 * padding, lbottom.toFloat()),
+            cornerRadius,
+            cornerRadius,
+            paint
         )
-            .check(ViewAssertions.matches(withText("test category")))
 
-        expectedData = expectedData.copy(isSearch = true, isShowMenu = false, isBigText = false, searchResults = listOf(0 to 2, 4 to 6, 8 to 10, 10 to 12), searchPosition = 3)
-
-        scenario.onActivity { activity ->
-            activity.binding.bind(expectedData)
-        }
-
-        sleep(500)
-
-        Espresso.onView(withId(R.id.submenu))
-            .check(ViewAssertions.matches(not(isDisplayed())))
-        Espresso.onView(withId(R.id.group_bottom))
-            .check(ViewAssertions.matches(not(isDisplayed())))
-        Espresso.onView(withId(R.id.reveal))
-            .check(ViewAssertions.matches(isDisplayed()))
-        Espresso.onView(withId(R.id.tv_search_result))
-            .check(ViewAssertions.matches(withText("4 of 4")))
-        Espresso.onView(withId(R.id.btn_result_up))
-            .check(ViewAssertions.matches(isEnabled()))
-        Espresso.onView(withId(R.id.btn_result_down))
-            .check(ViewAssertions.matches(not(isEnabled())))
-
-        expectedData = expectedData.copy(isSearch = true,  searchResults = listOf())
-
-        scenario.onActivity { activity ->
-            activity.binding.bind(expectedData)
-        }
-
-        Espresso.onView(withId(R.id.tv_search_result))
-            .check(ViewAssertions.matches(withText("Not found")))
-        Espresso.onView(withId(R.id.btn_result_up))
-            .check(ViewAssertions.matches(not(isEnabled())))
-        Espresso.onView(withId(R.id.btn_result_down))
-            .check(ViewAssertions.matches(not(isEnabled())))
-
-        scenario.close()
+        //check draw text
+        inOrder.verify(paint).color = textColor
+        inOrder.verify(canvas).drawText(text, 0, text.length, cml + padding, lbase.toFloat(), paint)
+        inOrder.verify(paint).color = defaultColor
     }
 
     @Test
-    fun module5() {
-        val scenario = ActivityScenario.launch(RootActivity::class.java)
-        val content =
-            """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas nibh sapien, consectetur et ultrices quis, convallis sit amet augue. Interdum et malesuada fames ac ante ipsum primis in faucibus. Vestibulum et convallis augue, eu hendrerit diam. Curabitur ut dolor at justo suscipit commodo. Curabitur consectetur, massa sed sodales sollicitudin, orci augue maximus lacus, ut elementum risus lorem nec tellus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent accumsan tempor lorem, quis pulvinar justo. Vivamus euismod risus ac arcu pharetra fringilla.
-                Maecenas cursus vehicula erat, in eleifend diam blandit vitae. In hac habitasse platea dictumst. Duis egestas augue lectus, et vulputate diam iaculis id. Aenean vestibulum nibh vitae mi luctus tincidunt. Fusce iaculis molestie eros, ac efficitur odio cursus ac. In at orci eget eros dapibus pretium congue sed odio. Maecenas facilisis, dolor eget mollis gravida, nisi justo mattis odio, ac congue arcu risus sed turpis.
-                Sed tempor a nibh at maximus."""
-        val searchResult = listOf(322 to 325, 930 to 933, 1032 to 1035, 1060 to 1063)
+    fun draw_link() {
+        //settings
+        val iconColor: Int = Color.RED
+        val padding: Float = 8f
+        val textColor: Int = Color.BLUE
 
-        scenario.onActivity { activity ->
-            activity.binding.bind(ArticleState().copy(content = listOf(content)))
-            activity.showSearchBar()
-        }
-        sleep(500)
+        //defaults
+        val canvasWidth = 700
+        val defaultColor = Color.GRAY
+        val measureText = 100f
+        val defaultAscent = -30
+        val defaultDescent = 10
+        val cml = 0 //current margin location
+        val ltop = 0 //line top
+        val lbase = 60 //line baseline
+        val lbottom = 80 //line bottom
 
-        Espresso.onView(withId(R.id.reveal))
-            .check(ViewAssertions.matches(isDisplayed()))
+        //mocks
+        val canvas = mock(Canvas::class.java)
+        `when`(canvas.width).thenReturn(canvasWidth)
+        val paint = mock(Paint::class.java)
+        `when`(paint.color).thenReturn(defaultColor)
+        `when`(
+            paint.measureText(
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyInt(),
+                ArgumentMatchers.anyInt()
+            )
+        ).thenReturn(measureText)
+        val fm = mock(Paint.FontMetricsInt::class.java)
+        fm.ascent = defaultAscent
+        fm.descent = defaultDescent
 
-        scenario.onActivity { activity ->
-            activity.renderSearchResult(searchResult)
-        }
+        //spy
+        val linkDrawable: Drawable = spy(VectorDrawable())
+        val path: Path = spy(Path())
 
-        Espresso.onView(withId(R.id.tv_text_content))
-            .check(ViewAssertions.matches(withText(content)))
-        Espresso.onView(withId(R.id.tv_text_content))
-            .check(ViewAssertions.matches(withSearchResult(searchResult)))
+        val text = SpannableString("text")
 
-        scenario.onActivity { activity ->
-            activity.renderSearchPosition(3)
-        }
+        val span = IconLinkSpan(linkDrawable, iconColor, padding, textColor)
+        text.setSpan(span, 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        span.path = path
 
-        Espresso.onView(withId(R.id.tv_text_content))
-            .check(ViewAssertions.matches(withSearchPosition(3)))
+        //check measure size
+        val size = span.getSize(paint, text, 0, text.length, fm)
+        assertEquals((defaultDescent - defaultAscent + padding + measureText).toInt(), size)
 
-        scenario.onActivity { activity ->
-            activity.clearSearchResult()
-        }
+        //check drawable set bounds and set tint
+        verify(linkDrawable).setBounds(0, 0, fm.descent - fm.ascent, fm.descent - fm.ascent)
+        verify(linkDrawable).setTint(iconColor)
 
-        Espresso.onView(withId(R.id.tv_text_content))
-            .check(ViewAssertions.matches(withSearchResult(listOf())))
+        //check draw icon and text
+        span.draw(canvas, text, 0, text.length, cml.toFloat(), ltop, lbase, lbottom, paint)
 
+        val inOrder = inOrder(paint, canvas, path, linkDrawable)
 
-        scenario.onActivity { activity ->
-            activity.hideSearchBar()
-        }
-        sleep(500)
-        Espresso.onView(withId(R.id.reveal))
-            .check(ViewAssertions.matches(not(isDisplayed())))
+        //check path effect
+        verify(paint, atLeastOnce()).pathEffect = any()
+        verify(paint, atLeastOnce()).strokeWidth = 0f
+        inOrder.verify(paint).color = textColor
 
-        scenario.close()
+        //check reset path
+        inOrder.verify(path).reset() //check reset before draw
+        verify(path).moveTo(cml + span.iconSize + padding, lbottom.toFloat())
+        verify(path).lineTo(cml + span.iconSize + padding + span.textWidth, lbottom.toFloat())
+
+        //check draw path
+        inOrder.verify(canvas).drawPath(path, paint)
+
+        //check draw icon
+        inOrder.verify(canvas).save()
+        inOrder.verify(canvas).translate(
+            cml.toFloat(),
+            (lbottom - linkDrawable.bounds.bottom).toFloat()
+        )
+        inOrder.verify(linkDrawable).draw(canvas)
+        inOrder.verify(canvas).restore()
+
+        //check draw text
+        inOrder.verify(paint).color = textColor
+        inOrder.verify(canvas).drawText(
+            text,
+            0,
+            text.length,
+            cml + span.iconSize + padding,
+            lbase.toFloat(),
+            paint
+        )
+        inOrder.verify(paint).color = defaultColor
     }
 
-    private fun Int.toHex(): String = String.format("#%06X", 0xFFFFFF and this)
-
-    private fun withFontSize(expectedSize: Float): Matcher<View> {
-        return object : BoundedMatcher<View, View>(TextView::class.java) {
-
-            var actSize: Float? = null
-
-            public override fun matchesSafely(target: View): Boolean {
-                if (target !is TextView) return false
-                val pixels = target.textSize
-                val actualSize = pixels / target.getResources().displayMetrics.scaledDensity
-                actSize = actualSize
-                return actualSize == expectedSize
-            }
-
-            override fun describeTo(description: Description) {
-                if (actSize == null) {
-                    description.appendText("with fontSize, expected fontSize : ")
-                    description.appendValue(expectedSize)
-                } else {
-                    description.appendText("with fontSize, actual fontSize : ")
-                    description.appendValue(actSize)
-                    description.appendText(" expected fontSize : ")
-                    description.appendValue(expectedSize)
-                }
-
-            }
-        }
-    }
-
-    private fun withSearchResult(searchResult: List<Pair<Int, Int>>): Matcher<View> {
-        return object : BoundedMatcher<View, View>(TextView::class.java) {
-            var actPositions: List<Pair<Int, Int>>? = null
-
-            public override fun matchesSafely(target: View): Boolean {
-                if (target !is TextView) return false
-                if (target.text !is Spannable) return false
-                val content = target.text as Spannable
-                val searchSpans = content.getSpans<SearchSpan>()
-                    .filter { it !is SearchFocusSpan }
-                val spansPositions =
-                    searchSpans.map { content.getSpanStart(it) to content.getSpanEnd(it) }
-                actPositions = spansPositions
-                return searchResult == spansPositions
-            }
-
-            override fun describeTo(description: Description) {
-                if (actPositions == null) {
-                    description.appendText("with search result, expected spans positions:  ")
-                    description.appendValue(searchResult)
-                } else {
-                    description.appendText("with search result, actual spans positions:  ")
-                    description.appendValue(actPositions)
-                    description.appendText(" expected spans positions : ")
-                    description.appendValue(searchResult)
-                }
-            }
-        }
-    }
-
-    private fun withSearchPosition(position: Int): Matcher<View> {
-        return object : BoundedMatcher<View, View>(TextView::class.java) {
-            var actPosition: Int? = null
-
-            public override fun matchesSafely(target: View): Boolean {
-                if (target !is TextView) return false
-                if (target.text !is Spannable) return false
-
-                val content = target.text as Spannable
-                val searchSpans = content.getSpans<SearchSpan>()
-                    .filter { it !is SearchFocusSpan }
-                    .map {content.getSpanStart(it) to content.getSpanEnd(it)}
-
-                val focusSpan = content.getSpans<SearchFocusSpan>()
-                    .map {content.getSpanStart(it) to content.getSpanEnd(it)}
-                    .firstOrNull()
-
-                actPosition = searchSpans.indexOfFirst { it == focusSpan }
-                return actPosition == position
-            }
-
-            override fun describeTo(description: Description) {
-                if (actPosition == null) {
-                    description.appendText("with search position, expected search focus span position: ")
-                    description.appendValue(position)
-                } else {
-                    description.appendText("with search position, actual search focus span position : ")
-                    description.appendValue(actPosition)
-                    description.appendText(" expected search focus span position : ")
-                    description.appendValue(position)
-                }
-            }
-        }
-    }
 
 }
 
