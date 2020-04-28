@@ -1,6 +1,7 @@
 package ru.skillbranch.skillarticles.extensions
 
 import android.content.Context
+import android.content.res.Resources
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -21,6 +22,14 @@ fun Context.dpToIntPx(dp: Int): Int {
         dp.toFloat(),
         this.resources.displayMetrics
     ).toInt()
+}
+
+fun Context.attrValue(res: Int): Int {
+    var value: Int? = null
+    val tv = TypedValue()
+    if (this.theme.resolveAttribute(res, tv, true)) value = tv.data
+    else throw Resources.NotFoundException("Resources with id $res not found")
+    return value!!
 }
 
 val Context.isNetworkAvailable: Boolean

@@ -5,7 +5,7 @@
     android:id="@+id/coordinator_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".RootActivity">
+    tools:context=".ui.RootActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appbar"
@@ -23,10 +23,13 @@
             app:layout_scrollFlags="scroll|enterAlwaysCollapsed"
             android:elevation="4dp"/>
     </com.google.android.material.appbar.AppBarLayout>
+
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
+
         <TextView
             android:id="@+id/tv_text_content"
             android:layout_width="wrap_content"
@@ -52,7 +55,8 @@
     <ru.skillbranch.skillarticles.ui.custom.Bottombar
         android:id="@+id/bottombar"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:layout_gravity="bottom"
         android:theme="@style/ArticleBarsTheme"
         android:elevation="4dp"
