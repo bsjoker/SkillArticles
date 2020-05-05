@@ -20,7 +20,7 @@ class MarkdownTextView constructor(
     context: Context,
     fontSize: Float,
     mockHelper: SearchBgHelper? = null //for mock
-) : TextView(context, null, 0), IMarkdownView {
+) : androidx.appcompat.widget.AppCompatTextView(context, null, 0), IMarkdownView {
 
     constructor(context: Context, fontSize: Float) : this(context, fontSize, null)
 
@@ -36,22 +36,19 @@ class MarkdownTextView constructor(
     private val color = context.attrValue(R.attr.colorOnBackground)
     private val focusRect = Rect()
 
-    private var searchBgHelper = SearchBgHelper(context) { top, bottom ->
-        focusRect.set(0, top - context.dpToIntPx(56), width, bottom + context.dpToIntPx(56))
-        requestRectangleOnScreen(focusRect, false)
-    }
-
+    private var searchBgHelper: SearchBgHelper
 
     init {
         searchBgHelper = mockHelper ?: SearchBgHelper(context) { top, bottom ->
             focusRect.set(0, top - context.dpToIntPx(56), width, bottom + context.dpToIntPx(56))
-            //show rect on view with animation
+            // Show rect on view with animation
             requestRectangleOnScreen(focusRect, false)
         }
         setTextColor(color)
         textSize = fontSize
         movementMethod = LinkMovementMethod.getInstance()
     }
+
 
     override fun onDraw(canvas: Canvas) {
         if (text is Spanned && layout != null) {
