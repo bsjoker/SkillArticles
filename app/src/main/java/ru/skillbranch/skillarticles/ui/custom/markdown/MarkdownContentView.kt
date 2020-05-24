@@ -1,10 +1,15 @@
 package ru.skillbranch.skillarticles.ui.custom.markdown
 
 import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
 import android.util.AttributeSet
+import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.util.isEmpty
+import androidx.core.view.ViewCompat
 import androidx.core.view.children
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
@@ -19,15 +24,13 @@ class MarkdownContentView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
     private lateinit var elements: List<MarkdownElement>
+    private var layoutManager: LayoutManager = LayoutManager()
+
 
     //for restore
-    private val idImageView = context.getString(R.string.markdown_image_view).toInt()
-    private var idImageViewCount = 0
-    private val idCodeView = context.getString(R.string.markdown_code_view).toInt()
-    private var idCodeViewCount = 0
-    private var ids = arrayListOf(idImageView, idCodeView)
+    //private var ids = arrayListOf<Int>()
 
-    var textSize by Delegates.observable(14f) { _, old, value ->
+    var textSize  by Delegates.observable(14f){_, old, value ->
         if (value == old) return@observable
         this.children.forEach {
             it as IMarkdownView
@@ -35,20 +38,21 @@ class MarkdownContentView @JvmOverloads constructor(
         }
     }
     var isLoading: Boolean = true
-    private val padding = context.dpToIntPx(8)
+    val padding = context.dpToIntPx(8) //8dp
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         var usedHeight = paddingTop
-        val width = View.getDefaultSize(suggestedMinimumWidth, widthMeasureSpec)
+        val width = getDefaultSize(suggestedMinimumWidth, widthMeasureSpec)
 
         children.forEach {
-            measureChild(it, widthMeasureSpec, heightMeasureSpec)
+            measureChild(it, widthMeasureSpec,heightMeasureSpec)
             usedHeight += it.measuredHeight
         }
 
         usedHeight += paddingBottom
         setMeasuredDimension(width, usedHeight)
     }
+
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         var usedHeight = paddingTop
@@ -64,7 +68,7 @@ class MarkdownContentView @JvmOverloads constructor(
                     r - paddingRight / 2,
                     usedHeight + it.measuredHeight
                 )
-            } else {
+            }else{
                 it.layout(
                     left,
                     usedHeight,
@@ -78,22 +82,26 @@ class MarkdownContentView @JvmOverloads constructor(
 
     fun setContent(content: List<MarkdownElement>) {
         elements = content
+        var index = 0
         content.forEach {
-            when (it) {
+            when(it) {
                 is MarkdownElement.Text -> {
                     val tv = MarkdownTextView(context, textSize).apply {
-                        setPaddingOptionally(left = padding, right = padding)
+
+                        setPaddingOptionally(
+                            left = padding,
+                            right = padding
+                        )
                         setLineSpacing(fontSize * 0.5f, 1f)
                     }
 
                     MarkdownBuilder(context)
                         .markdownToSpan(it)
                         .run {
-                            tv.setText(this, TextView.BufferType.SPANNABLE)
+                            tv.setText(this,TextView.BufferType.SPANNABLE)
                         }
                     addView(tv)
                 }
-
                 is MarkdownElement.Image -> {
                     val iv = MarkdownImageView(
                         context,
@@ -101,23 +109,20 @@ class MarkdownContentView @JvmOverloads constructor(
                         it.image.url,
                         it.image.text,
                         it.image.alt
-                    ).apply {
-                        id = ids[0] + idImageViewCount
-                    }
-                    idImageViewCount++
+                    )
                     addView(iv)
+                    layoutManager.attachToParent(iv, index)
+                    index++
                 }
-
                 is MarkdownElement.Scroll -> {
-                    val sv = MarkdownCodeView(
+                    val sv= MarkdownCodeView(
                         context,
                         textSize,
                         it.blockCode.text
-                    ).apply {
-                        id = ids[1] + idCodeViewCount
-                    }
-                    idCodeViewCount++
+                    )
                     addView(sv)
+                    layoutManager.attachToParent(sv, index)
+                    index++
                 }
             }
         }
@@ -128,15 +133,14 @@ class MarkdownContentView @JvmOverloads constructor(
             view as IMarkdownView
             view.clearSearchResult()
         }
-
         if (searchResult.isEmpty()) return
 
         val bounds = elements.map { it.bounds }
         val result = searchResult.groupByBounds(bounds)
 
-        children.forEachIndexed { index, view ->
+        children.forEachIndexed{ index, view ->
             view as IMarkdownView
-            // Search for child with markdown element offset
+            //search child with markdown element offset
             view.renderSearchResult(result[index], elements[index].offset)
         }
     }
@@ -145,7 +149,6 @@ class MarkdownContentView @JvmOverloads constructor(
         searchPosition: Pair<Int, Int>?
     ) {
         searchPosition ?: return
-
         val bounds = elements.map { it.bounds }
 
         val index = bounds.indexOfFirst { (start, end) ->
@@ -155,7 +158,6 @@ class MarkdownContentView @JvmOverloads constructor(
         }
 
         if (index == -1) return
-
         val view = getChildAt(index)
         view as IMarkdownView
         view.renderSearchPosition(searchPosition, elements[index].offset)
@@ -170,6 +172,84 @@ class MarkdownContentView @JvmOverloads constructor(
 
     fun setCopyListener(listener: (String) -> Unit) {
         children.filterIsInstance<MarkdownCodeView>()
-            .forEach { it.copyListener = listener }
+            .forEach {it.copyListener = listener}
+    }
+
+    override fun onSaveInstanceState(): Parcelable? {
+        val state = SavedState(super.onSaveInstanceState())
+        state.layout = layoutManager
+        return  state
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        super.onRestoreInstanceState(state)
+        if (state is SavedState) layoutManager = state.layout
+    }
+
+    override fun dispatchSaveInstanceState(container: SparseArray<Parcelable>?) {
+        //save children manually without markdown text view
+        children.filter { it !is MarkdownTextView }
+            .forEach { it.saveHierarchyState(layoutManager.container) }
+        //save only markdownContentView
+        dispatchFreezeSelfOnly(container)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private class LayoutManager() : Parcelable{
+
+        var ids: MutableList<Int> = mutableListOf()
+        var container: SparseArray<Parcelable> = SparseArray()
+
+        constructor(parcel: Parcel): this() {
+            ids = parcel.readArrayList(Int::class.java.classLoader) as ArrayList<Int>
+            container = parcel.readSparseArray<Parcelable>(this::class.java.classLoader) as SparseArray<Parcelable>
+        }
+        override fun writeToParcel(parcel: Parcel, flags: Int) {
+            parcel.writeIntArray(ids.toIntArray())
+            //parcel.writeList(ids.toList())
+            parcel.writeSparseArray(container)
+        }
+
+        fun attachToParent(view: View, index :Int){
+            if (container.isEmpty()){
+                view.id = ViewCompat.generateViewId()
+                ids.add(view.id)
+            }else{
+                view.id = ids[index]
+                view.restoreHierarchyState(container)
+            }
+        }
+
+        override fun describeContents(): Int = 0
+
+        companion object CREATOR: Parcelable.Creator<LayoutManager> {
+            override fun createFromParcel(parcel: Parcel): LayoutManager = LayoutManager(parcel)
+            override fun newArray(size: Int): Array<LayoutManager?> = arrayOfNulls(size)
+        }
+    }
+    private class SavedState : BaseSavedState, Parcelable{
+        lateinit var layout: LayoutManager
+
+        constructor(superState: Parcelable?) : super(superState)
+
+        @Suppress("UNCHECKED_CAST")
+        constructor(src: Parcel) : super(src){
+            //restore state from parcel
+            layout = src.readParcelable(LayoutManager::class.java.classLoader)!!
+        }
+
+        override fun writeToParcel(dst: Parcel, flags: Int) {
+            //write state to parcel
+            super.writeToParcel(dst, flags)
+            dst.writeParcelable(layout, flags)
+        }
+
+        override fun describeContents() = 0
+
+        companion object CREATOR : Parcelable.Creator<SavedState> {
+            override fun createFromParcel(parcel: Parcel) = SavedState(parcel)
+
+            override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
+        }
     }
 }
