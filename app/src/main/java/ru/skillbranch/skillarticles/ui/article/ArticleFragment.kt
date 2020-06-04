@@ -28,7 +28,6 @@ import ru.skillbranch.skillarticles.extensions.dpToIntPx
 import ru.skillbranch.skillarticles.extensions.format
 import ru.skillbranch.skillarticles.extensions.hideKeyboard
 import ru.skillbranch.skillarticles.extensions.setMarginOptionally
-import ru.skillbranch.skillarticles.ui.IArticleView
 import ru.skillbranch.skillarticles.ui.base.BaseFragment
 import ru.skillbranch.skillarticles.ui.base.Binding
 import ru.skillbranch.skillarticles.ui.base.BottombarBuilder
@@ -39,7 +38,8 @@ import ru.skillbranch.skillarticles.viewmodels.article.ArticleViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.ViewModelFactory
 
-class ArticleFragment : BaseFragment<ArticleViewModel>(), IArticleView {
+class ArticleFragment : BaseFragment<ArticleViewModel>(),
+    IArticleView {
     private val args: ArticleFragmentArgs by navArgs()
 
     override val viewModel: ArticleViewModel by viewModels {
