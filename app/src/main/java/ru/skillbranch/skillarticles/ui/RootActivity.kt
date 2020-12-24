@@ -1,208 +1,83 @@
-package ru.skillbranch.skillarticles
+package ru.skillbranch.skillarticles.ui
 
 import android.os.Bundle
-import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.widget.ImageView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.appcompat.widget.SearchView
-import androidx.appcompat.widget.Toolbar
-import androidx.lifecycle.ViewModelProviders
+import androidx.activity.viewModels
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_root.*
 import kotlinx.android.synthetic.main.layout_bottombar.*
-import kotlinx.android.synthetic.main.layout_submenu.*
-import ru.skillbranch.skillarticles.extensions.dpToIntPx
-import ru.skillbranch.skillarticles.viewmodels.ArticleState
-import ru.skillbranch.skillarticles.viewmodels.ArticleViewModel
-import ru.skillbranch.skillarticles.viewmodels.Notify
-import ru.skillbranch.skillarticles.viewmodels.ViewModelFactory
+import ru.skillbranch.skillarticles.R
+import ru.skillbranch.skillarticles.ui.base.BaseActivity
+import ru.skillbranch.skillarticles.viewmodels.RootViewModel
+import ru.skillbranch.skillarticles.viewmodels.base.Notify
+import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
+import ru.skillbranch.skillarticles.viewmodels.base.NavigationCommand
 
-
-class RootActivity : AppCompatActivity() {
-
-    private lateinit var viewModel: ArticleViewModel
-    private lateinit var searchView: SearchView
-    var _isSearch = false
-    var _queryString: String? = "s"
+class RootActivity : BaseActivity<RootViewModel>() {
+    override val layout: Int = R.layout.activity_root
+    public override val viewModel: RootViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_root)
-        setupToolbar()
-        setupBottombar()
-        setupSubmenu()
+        // Top level destination
+        val appBarConfiguration = AppBarConfiguration(
+            setOf(
+                R.id.nav_articles,
+                R.id.nav_bookmarks,
+                R.id.nav_transcriptions,
+                R.id.nav_profile
+            )
+        )
 
-        val vmFactory = ViewModelFactory("0")
-        viewModel = ViewModelProviders.of(this, vmFactory).get(ArticleViewModel::class.java)
-        viewModel.observeState(this) {
-            renderUi(it)
-            //setupToolbar()
+        setupActionBarWithNavController(navController, appBarConfiguration)
+
+        nav_view.setOnNavigationItemSelectedListener {
+            // If click on bottom navigation item -> navigate to destination by item id
+            viewModel.navigate(NavigationCommand.To(it.itemId))
+            true
         }
 
-        viewModel.observeNotifications(this) {
-            renderNotification(it)
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu, menu)
-        val searchItem: MenuItem = menu.findItem(R.id.action_search)
-        searchView = searchItem.actionView as SearchView
-
-        searchView.queryHint = "Search View Hint"
-
-        if (_isSearch) {
-            Log.d("RootActivity", "Set open search")
-            searchItem.expandActionView()
-            searchView.setQuery(_queryString, true)
-            searchView.setFocusable(true)
-            searchView.setIconified(false)
-            searchView.requestFocusFromTouch()
-        }
-
-        searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
-            override fun onMenuItemActionExpand(item: MenuItem): Boolean {
-                Log.d("RootActivity", "Open")
-                _isSearch = true
-                changeStateSearch(_isSearch)
-                return true
-            }
-
-            override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                Log.d("RootActivity", "Close")
-                _isSearch = false
-                changeStateSearch(_isSearch)
-                invalidateOptionsMenu()
-                return true
-            }
-        })
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                _queryString = newText
-                saveQuery(_queryString)
-                return true
-            }
-        })
-
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    private fun saveQuery(newText: String?) {
-        viewModel.handleSearchQuery(newText)
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-        when (toolbar.getChildAt(2)) {
-            is ImageView -> {
-                val logo =
-                    if (toolbar.childCount > 2 && !_isSearch) toolbar.getChildAt(2) as ImageView else null
-                logo?.scaleType = ImageView.ScaleType.CENTER_CROP
-                //check toolbar imports
-                (logo?.layoutParams as? Toolbar.LayoutParams)?.let {
-                    it.width = dpToIntPx(40)
-                    it.height = dpToIntPx(40)
-                    it.marginEnd = dpToIntPx(16)
-                    logo.layoutParams = it
-                }
-            }
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            // If destination change set select bottom navigation item
+//            nav_view.selectDestination(destination) // TODO hometask extention function, подсветить элемент боттомбара, если на нем находимся
         }
     }
 
-    private fun renderUi(data: ArticleState) {
-        //bind submenu state
-        btn_settings.isChecked = data.isShowMenu
-        if (data.isShowMenu) submenu.open() else submenu.close()
+    override fun renderNotification(notify: Notify) {
+        val snackbar = Snackbar.make(container, notify.message, Snackbar.LENGTH_LONG)
 
-        _queryString = data.searchQuery ?: ""
-        _isSearch = data.isSearch
-
-        //bind article person data
-        btn_like.isChecked = data.isLike
-        btn_bookmark.isChecked = data.isBookmark
-
-        // bind submenu views
-        switch_mode.isChecked = data.isDarkMode
-        delegate.localNightMode =
-            if (data.isDarkMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
-
-        if (data.isBigText) {
-            tv_text_content.textSize = 18f
-            btn_text_up.isChecked = true
-            btn_text_down.isChecked = false
-        } else {
-            tv_text_content.textSize = 14f
-            btn_text_up.isChecked = false
-            btn_text_down.isChecked = true
-        }
-
-        // bind content
-        tv_text_content.text =
-            if (data.isLoadingContent) "loading" else data.content.first() as String
-
-        // bind toolbar
-        toolbar.title = data.title ?: "Skill Articles"
-        toolbar.subtitle = data.category ?: "loading..."
-        if (data.categoryIcon != null) toolbar.logo = getDrawable(data.categoryIcon as Int)
-    }
-
-    private fun renderNotification(notify: Notify) {
-        val snackbar = Snackbar.make(coordinator_container, notify.message, Snackbar.LENGTH_LONG)
+        if (bottombar != null) snackbar.anchorView = bottombar
+        else snackbar.anchorView = nav_view
 
         when (notify) {
-            is Notify.TextMessage -> { /* nothing */
-            }
             is Notify.ActionMessage -> {
-                snackbar.setActionTextColor(getColor(R.color.color_accent_dark))
-                snackbar.setAction(notify.actionLabel) {
-                    notify.actionHandler.invoke()
+                val (_, label, handler) = notify
+
+                with(snackbar) {
+                    setActionTextColor(getColor(R.color.color_accent_dark))
+                    setAction(label) { handler.invoke() }
                 }
             }
             is Notify.ErrorMessage -> {
+                val (_, label, handler) = notify
+
                 with(snackbar) {
-                    setBackgroundTint(getColor(R.color.color_accent_dark))
+                    setBackgroundTint(getColor(R.color.design_default_color_error))
                     setTextColor(getColor(android.R.color.white))
                     setActionTextColor(getColor(android.R.color.white))
-                    setAction(notify.errLabel) {
-                        notify.errHandler?.invoke()
-                    }
+                    handler ?: return@with
+                    setAction(label) { handler.invoke() }
                 }
             }
         }
-
-        with(snackbar) {
-            setAnchorView(bottombar)
-            show()
-        }
+        snackbar.show()
     }
 
-    private fun setupBottombar() {
-        btn_like.setOnClickListener { viewModel.handleLike() }
-        btn_bookmark.setOnClickListener { viewModel.handleBookmark() }
-        btn_share.setOnClickListener { viewModel.handleShare() }
-        btn_settings.setOnClickListener { viewModel.handleToggleMenu() }
+    override fun subscribeOnState(state: IViewModelState) {
+        // DO something with state
     }
-
-    private fun changeStateSearch(b: Boolean) {
-        viewModel.handleIsSearch(b)
-    }
-
-    private fun setupSubmenu() {
-        btn_text_up.setOnClickListener { viewModel.handleUpText() }
-        btn_text_down.setOnClickListener { viewModel.handleDownText() }
-        switch_mode.setOnClickListener { viewModel.handleNightMode() }
-    }
-
-    private inline fun <reified T> T.get() = T::class.java.simpleName
 }
+
+
 
