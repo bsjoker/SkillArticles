@@ -25,8 +25,8 @@ fun View.setPaddingOptionally(
 }
 
 fun BottomNavigationView.selectDestination(destination: NavDestination) {
-    for (menuItem in menu.iterator()) {
-        if (menuItem.itemId == destination.id) menuItem.isChecked = true
+    this.menu.findItem(destination.id)?.let {
+        if (!it.isChecked) it.isChecked = true
     }
 }
 
