@@ -6,6 +6,7 @@ import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import kotlin.reflect.KProperty
 
 abstract class Binding {
+    // mutableMapOf<поле делегата, сам делегат>
     val delegates = mutableMapOf<String, RenderProp<out Any>>()
     var isInflated = false
 
@@ -17,6 +18,8 @@ abstract class Binding {
         }
     }
 
+    // Binding будет создан единожды, но метод rebind будет
+    // у него вызываться каждый раз, когда будет создаваться новая вью
     fun rebind() {
         delegates.forEach { it.value.bind() }
     }
@@ -28,7 +31,6 @@ abstract class Binding {
     open fun saveUi(outState: Bundle) {
         //empty default implementation
     }
-
     /**
      * override this if need restore binding from bundle
      */
@@ -36,12 +38,20 @@ abstract class Binding {
         //empty default implementation
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun <A, B, C, D> dependsOn(
+
+    // onChange - обработчик, который будет вызван в том случае, если одно из значений, переданных первым
+    // аргументом полей было изменено
+    // все key property преобразуются в список из имён,
+    // в мапе делегатов по имени property ищется делегат,
+    // если находится - вызывается у этого делегата метод addListener
+    // таким образом, когда свойство этого делегата будет изменено,
+    // будет вызван обработчик onChange,
+    // в который будет переданы все текущие значения наблюдаемых полей из мапы delegates
+    fun <A, B, C> dependsOn(
         vararg fields: KProperty<*>,
-        onChange: (A, B, C, D) -> Unit
+        onChange: (A, B, C) -> Unit
     ) {
-        check(fields.size == 4) { "Names size must be 4, current ${fields.size}" }
+        check(fields.size == 3) { "Names size must be 3, current ${fields.size}" }
         val names = fields.map { it.name }
 
         names.forEach {
@@ -49,12 +59,10 @@ abstract class Binding {
                 onChange(
                     delegates[names[0]]?.value as A,
                     delegates[names[1]]?.value as B,
-                    delegates[names[2]]?.value as C,
-                    delegates[names[3]]?.value as D
+                    delegates[names[2]]?.value as C
                 )
             }
         }
+
     }
-
-
 }

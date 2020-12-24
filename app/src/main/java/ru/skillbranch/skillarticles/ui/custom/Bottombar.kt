@@ -1,5 +1,6 @@
 package ru.skillbranch.skillarticles.ui.custom
 
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
@@ -16,14 +17,11 @@ import kotlin.math.hypot
 
 class Bottombar @JvmOverloads constructor(
     context: Context,
-    attrs: AttributeSet? = null,
+    attributeSet: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : ConstraintLayout(context, attrs, defStyleAttr), CoordinatorLayout.AttachedBehavior {
-    var isSearchMode = false
+) : ConstraintLayout(context, attributeSet, defStyleAttr), CoordinatorLayout.AttachedBehavior {
 
-    override fun getBehavior(): CoordinatorLayout.Behavior<Bottombar> {
-        return BottombarBehavior()
-    }
+    var isSearchMode = false
 
     init {
         val materialBg = MaterialShapeDrawable.createWithElevationOverlay(context)
@@ -31,15 +29,15 @@ class Bottombar @JvmOverloads constructor(
         background = materialBg
     }
 
-    //save state
+    override fun getBehavior() = BottombarBehavior()
+
     override fun onSaveInstanceState(): Parcelable? {
         val savedState = SavedState(super.onSaveInstanceState())
         savedState.ssIsSearchMode = isSearchMode
         return savedState
     }
 
-    //restore state
-    override fun onRestoreInstanceState(state: Parcelable) {
+    override fun onRestoreInstanceState(state: Parcelable?) {
         super.onRestoreInstanceState(state)
         if (state is SavedState) {
             isSearchMode = state.ssIsSearchMode
@@ -88,17 +86,20 @@ class Bottombar @JvmOverloads constructor(
             tv_search_result.text = "Not found"
             btn_result_up.isEnabled = false
             btn_result_down.isEnabled = false
-        }else{
+        } else {
             tv_search_result.text = "${position.inc()} of $searchCount"
-            btn_result_up.isEnabled = true
-            btn_result_down.isEnabled = true
+            btn_result_up.isEnabled = position > 0
+            btn_result_down.isEnabled = position < searchCount.dec()
         }
+    }
 
-        //lock button presses in min/max positions
-        when(position){
-            0 -> btn_result_up.isEnabled = false
-            searchCount -1 -> btn_result_down.isEnabled = false
-        }
+    fun show() {
+        // translationY не вызывает перерисовки самой компоненты, а просто её смещает
+        ObjectAnimator.ofFloat(this, "translationY", 0f).start()
+    }
+
+    fun hide() {
+        ObjectAnimator.ofFloat(this, "translationY", height.toFloat()).start()
     }
 
     private class SavedState : BaseSavedState, Parcelable {
@@ -115,7 +116,7 @@ class Bottombar @JvmOverloads constructor(
             dst.writeInt(if (ssIsSearchMode) 1 else 0)
         }
 
-        override fun describeContents() = 0
+        override fun describeContents(): Int = 0
 
         companion object CREATOR : Parcelable.Creator<SavedState> {
             override fun createFromParcel(parcel: Parcel) = SavedState(parcel)

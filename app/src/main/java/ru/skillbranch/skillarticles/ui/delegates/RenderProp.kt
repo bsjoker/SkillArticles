@@ -6,20 +6,24 @@ import kotlin.reflect.KProperty
 
 class RenderProp<T: Any>(
     var value: T,
-    private val isNeedInit: Boolean = true,
+    private val needInit: Boolean = true,
     private val onChange: ((T) -> Unit)? = null
 ) : ReadWriteProperty<Binding, T> {
+
     private val listeners: MutableList<() -> Unit> = mutableListOf()
 
     fun bind() {
-        if (isNeedInit) onChange?.invoke(value)
+        if (needInit) onChange?.invoke(value)
     }
 
+    // provide delegate (when by call)
+    // можно было бы обращаться к каждому свойству при помощи рефлексии и получить его делегат,
+    // но она небыстрая и kotlin.reflection - тяжёлая библиотека
     operator fun provideDelegate(
         thisRef: Binding,
         prop: KProperty<*>
     ): ReadWriteProperty<Binding, T> {
-        val delegate = RenderProp(value, true, onChange)
+        val delegate = RenderProp(value, needInit, onChange)
         registerDelegate(thisRef, prop.name, delegate)
         return delegate
     }
@@ -33,12 +37,13 @@ class RenderProp<T: Any>(
         if (listeners.isNotEmpty()) listeners.forEach { it.invoke() }
     }
 
-    //register additional listener
+    // register additional listener
     fun addListener(listener: () -> Unit) {
         listeners.add(listener)
     }
 
-private fun registerDelegate(thisRef: Binding, name: String, delegate: RenderProp<T>) {
-    thisRef.delegates[name] = delegate
-}
+    // register new delegate for property in Binding
+    private fun registerDelegate(thisRef: Binding, name: String, delegate: RenderProp<T>) {
+        thisRef.delegates[name] = delegate
+    }
 }

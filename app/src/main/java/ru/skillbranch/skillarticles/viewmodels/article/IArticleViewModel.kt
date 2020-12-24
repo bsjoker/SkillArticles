@@ -1,8 +1,8 @@
 package ru.skillbranch.skillarticles.viewmodels.article
 
 import androidx.lifecycle.LiveData
-import ru.skillbranch.skillarticles.data.ArticleData
-import ru.skillbranch.skillarticles.data.ArticlePersonalInfo
+import ru.skillbranch.skillarticles.data.models.ArticleData
+import ru.skillbranch.skillarticles.data.models.ArticlePersonalInfo
 import ru.skillbranch.skillarticles.data.repositories.MarkdownElement
 
 interface IArticleViewModel {
@@ -41,14 +41,14 @@ interface IArticleViewModel {
     fun handleDownText()
 
     /**
-     * добавление/удалние статьи в закладки, обрабока нажатия на кнопку btn_bookmark
+     * добавление/удалние статьи в закладки, обработка нажатия на кнопку btn_bookmark
      * необходимо отобразить сообщение пользователю "Add to bookmarks" или "Remove from bookmarks"
      * в соответствии с текущим состоянием
      */
     fun handleBookmark()
 
     /**
-     * добавление/удалние статьи в понравившееся, обрабока нажатия на кнопку btn_like
+     * добавление/удалние статьи в понравившееся, обработка нажатия на кнопку btn_like
      * необходимо отобразить сообщение пользователю (Notify.ActionMessage) "Mark is liked" или
      * "Don`t like it anymore"  в соответствии с текущим состоянием.
      * если пользователь убрал Like необходимо добавить  actionLabel в снекбар
@@ -57,28 +57,53 @@ interface IArticleViewModel {
     fun handleLike()
 
     /**
-     * поделиться статьей, обрабока нажатия на кнопку btn_share
+     * поделиться статьей, обработка нажатия на кнопку btn_share
      * необходимо отобразить сообщение с ошибкой пользователю (Notify.ErrorMessage) "Share is not implemented"
      * и текстом errLabel "OK"
      */
     fun handleShare()
 
     /**
-     * обрабока нажатия на кнопку btn_settings
+     * обработка нажатия на кнопку btn_settings
      * необходимо отобразить или скрыть меню в соответствии с текущим состоянием
      */
     fun handleToggleMenu()
 
     /**
-     * обрабока перехода в режим поиска searchView
+     * обработка перехода в режим поиска searchView
      * при нажатии на пункту меню тулбара необходимо отобразить searchView и сохранить состояние при
      * изменении конфигурации (пересоздании активити)
      */
     fun handleSearchMode(isSearch: Boolean)
 
     /**
-     * обрабока поискового запроса, необходимо сохранить поисковый запрос и отображать его в
+     * обработка поискового запроса, необходимо сохранить поисковый запрос и отображать его в
      * searchView при изменении конфигурации (пересоздании активити)
      */
     fun handleSearch(query: String?)
+
+    /**
+     * обработка нажатия на btn_result_up, необходимо перенести фокус на предидущее поисковое вхождение
+     */
+    fun handleUpResult()
+
+    /**
+     * обработка нажатия на btn_result_down, необходимо перенести фокус на следующее поисковое вхождение
+     */
+    fun handleDownResult()
+
+    /**
+     * обработка нажатия на iv_copy в MarkdownCodeView, необходимо скопировать код из MarkdownCodeView в буфер обмена
+     **/
+    fun handleCopyCode()
+
+    /**
+     * обработка отправки комментария, если пользователь не авторизован отобразить экран авторизации
+     **/
+    fun handleSendComment(comment: String)
+
+    /**
+     * обработка ввода комментария для его сохранения при уничтожении процесса
+     */
+    fun handleCommentInput(comment: String)
 }
